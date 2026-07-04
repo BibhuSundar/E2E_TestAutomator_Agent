@@ -1,0 +1,11 @@
+[
+  {
+    "id": "1",
+    "username": "Admin",
+    "email": "admin@automator.com",
+    "full_name": "Bibhu Das",
+    "role": "Admin",
+    "hashed_password": "$2b$12$lyY9mansP2ank53vOlcyR.fe1ExuwQA63gypLJ8.Jb1VB1C8VwpiS",
+    "is_active": true
+  }
+]
