@@ -85,7 +85,7 @@ def decode_token(token: str) -> Optional[TokenData]:
 
 
 def user_to_out(user: UserInDB) -> UserOut:
-    permissions = ROLE_PERMISSIONS.get(user.role, [])
+    permissions = user.custom_permissions if user.custom_permissions is not None else ROLE_PERMISSIONS.get(user.role, [])
     return UserOut(
         id=user.id,
         username=user.username,
@@ -95,6 +95,16 @@ def user_to_out(user: UserInDB) -> UserOut:
         is_active=user.is_active,
         permissions=permissions,
     )
+
+
+def delete_user(user_id: str) -> bool:
+    users = load_users()
+    for i, u in enumerate(users):
+        if u["id"] == user_id:
+            del users[i]
+            save_users(users)
+            return True
+    return False
 
 
 def create_user(user_data: dict) -> UserOut:

@@ -18,10 +18,15 @@ class Settings(BaseSettings):
 
     # Groq
     groq_api_key: Optional[str] = None
-    groq_model: str = "llama3-8b-8192"
+    groq_model: str = "llama-3.3-70b-versatile"
 
     # Default LLM provider: "openai" | "ollama" | "groq"
     default_llm_provider: str = "openai"
+
+    # Jira
+    jira_base_url: Optional[str] = None
+    jira_email: Optional[str] = None
+    jira_api_token: Optional[str] = None
 
     # App
     app_name: str = "Test Automator"

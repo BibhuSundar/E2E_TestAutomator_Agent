@@ -13,17 +13,17 @@ class Role(str, Enum):
 # Role-based permission matrix
 ROLE_PERMISSIONS: dict[str, list[str]] = {
     "Admin": [
-        "dashboard", "product_requirement", "planning", "designing",
+        "dashboard", "product_requirement", "planning", "test_strategy", "designing",
         "automation", "code_review", "execution", "deployer",
         "configure", "support", "user_management"
     ],
     "QA Manager": [
-        "dashboard", "product_requirement", "planning", "designing",
+        "dashboard", "product_requirement", "planning", "test_strategy", "designing",
         "automation", "code_review", "execution", "deployer",
         "configure", "support"
     ],
     "QA Lead": [
-        "dashboard", "product_requirement", "planning", "designing",
+        "dashboard", "product_requirement", "planning", "test_strategy", "designing",
         "automation", "code_review", "execution", "support"
     ],
     "QA Analyst": [
@@ -48,6 +48,7 @@ class UserInDB(UserBase):
     id: str
     hashed_password: str
     is_active: bool = True
+    custom_permissions: Optional[list[str]] = None
 
 
 class UserOut(UserBase):

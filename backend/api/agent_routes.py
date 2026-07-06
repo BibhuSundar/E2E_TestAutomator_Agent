@@ -15,7 +15,7 @@ class AgentRequest(BaseModel):
     agent: str                                        # e.g. "product_requirement"
     task: str                                         # user's task/prompt
     context: Optional[str] = None
-    llm_provider: Optional[str] = "groq"             # "openai" | "groq" | "ollama"
+    llm_provider: Optional[str] = None                # "openai" | "groq" | "ollama"
 
 
 class AgentResponse(BaseModel):
@@ -48,6 +48,7 @@ async def list_agents(current_user: UserOut = Depends(get_current_user)):
     all_agents = [
         {"id": "product_requirement", "name": "Product Requirement", "description": "Analyze and extract product requirements"},
         {"id": "planning", "name": "Planning", "description": "Create test plans and strategies"},
+        {"id": "test_strategy", "name": "Test Strategy", "description": "Design comprehensive test strategies"},
         {"id": "designing", "name": "Designing", "description": "Design test cases and test architecture"},
         {"id": "automation", "name": "Automation", "description": "Generate automation test scripts"},
         {"id": "code_review", "name": "Code Review", "description": "Review test code quality"},

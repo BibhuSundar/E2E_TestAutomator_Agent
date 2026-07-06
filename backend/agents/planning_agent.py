@@ -2,6 +2,7 @@ from agents.base_agent import BaseTestAgent
 
 
 class PlanningAgent(BaseTestAgent):
+    default_llm_provider = "ollama"
     role = "Test Planning Strategist"
     goal = (
         "Create comprehensive test plans including scope, test strategy, resource allocation, "

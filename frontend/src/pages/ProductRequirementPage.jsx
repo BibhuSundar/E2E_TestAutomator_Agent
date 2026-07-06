@@ -14,15 +14,7 @@
 import React, { useState, useRef } from 'react'
 import DashboardLayout from '../components/DashboardLayout'
 import { useAuth } from '../context/AuthContext'
-import { agentAPI } from '../api/client'
-import mammoth from 'mammoth'
-import * as pdfjsLib from 'pdfjs-dist'
-
-// Point pdf.js worker to the bundled worker file
-pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.mjs',
-  import.meta.url
-).toString()
+import { agentAPI, jiraAPI, filesAPI } from '../api/client'
 
 const TABS = [
   { id: 'paste',  label: 'Paste Text' },
@@ -75,70 +67,10 @@ ${approvedBadge}
   }, 300)
 }
 
-/* ── File readers ──────────────────────────────────────────────── */
-
-/** Read plain text / markdown as-is */
-function readAsPlainText(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload  = e => resolve(e.target.result)
-    reader.onerror = reject
-    reader.readAsText(file, 'UTF-8')
-  })
-}
-
-/** Extract text from a PDF using pdf.js */
-async function readPDF(file) {
-  const arrayBuffer = await file.arrayBuffer()
-  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
-  const pages = []
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page    = await pdf.getPage(i)
-    const content = await page.getTextContent()
-    const text    = content.items.map(item => item.str).join(' ')
-    pages.push(`--- Page ${i} ---\n${text}`)
-  }
-  return pages.join('\n\n')
-}
-
-/** Extract text from a DOCX using mammoth */
-async function readDOCX(file) {
-  const arrayBuffer = await file.arrayBuffer()
-  const result = await mammoth.extractRawText({ arrayBuffer })
-  return result.value
-}
-
-/** Dispatch to the right reader based on file type / extension */
-async function readFileAsText(file) {
-  const name = file.name.toLowerCase()
-  const type = file.type
-
-  // Plain text & markdown
-  if (
-    type === 'text/plain' ||
-    type === 'text/markdown' ||
-    name.endsWith('.txt') ||
-    name.endsWith('.md')
-  ) {
-    return readAsPlainText(file)
-  }
-
-  // PDF
-  if (type === 'application/pdf' || name.endsWith('.pdf')) {
-    return readPDF(file)
-  }
-
-  // DOCX / DOC
-  if (
-    type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
-    type === 'application/msword' ||
-    name.endsWith('.docx') ||
-    name.endsWith('.doc')
-  ) {
-    return readDOCX(file)
-  }
-
-  throw new Error(`Unsupported file type: ${file.name}`)
+/* ── Upload to server for parsing & storage ──────────────────── */
+async function uploadFileToServer(file) {
+  const data = await filesAPI.upload(file, 'product_requirement')
+  return data.text
 }
 
 /* ── Component ─────────────────────────────────────────────────── */
@@ -150,9 +82,12 @@ export default function ProductRequirementPage() {
   const [pasteText, setPasteText]       = useState('')
   const [uploadedFile, setUploadedFile] = useState(null)
   const [fileContent, setFileContent]   = useState('')
+  const [fileEditable, setFileEditable] = useState('')
   const [dragOver, setDragOver]         = useState(false)
   const [jiraKey, setJiraKey]           = useState('')
   const [jiraText, setJiraText]         = useState('')
+  const [jiraFetching, setJiraFetching] = useState(false)  // fetch spinner
+  const [jiraFetched, setJiraFetched]   = useState(null)   // fetched issue data
   const fileInputRef = useRef()
 
   // async state
@@ -161,9 +96,11 @@ export default function ProductRequirementPage() {
   const [error, setError]           = useState('')
 
   // result state
-  const [result, setResult]     = useState(null)       // raw text from agent
-  const [approved, setApproved] = useState(false)      // approval flag
-  const [approvedAt, setApprovedAt] = useState(null)   // timestamp
+  const [result, setResult]         = useState(null)       // raw text from agent
+  const [approved, setApproved]     = useState(false)      // approval flag
+  const [approvedAt, setApprovedAt] = useState(null)       // timestamp
+  const [rejected, setRejected]     = useState(false)      // rejection flag
+  const [rejectedAt, setRejectedAt] = useState(null)       // timestamp
 
   const resultRef = useRef(null) // scroll to result
 
@@ -183,22 +120,17 @@ export default function ProductRequirementPage() {
   /* ── file helpers ── */
   const handleFile = async (file) => {
     if (!file) return
-    const name = file.name.toLowerCase()
-    const allowed = name.endsWith('.txt') || name.endsWith('.md') ||
-                    name.endsWith('.pdf') || name.endsWith('.doc') || name.endsWith('.docx')
-    if (!allowed) {
-      setError('Unsupported file type. Please upload a .txt, .md, .pdf, .doc, or .docx file.')
-      return
-    }
     setError('')
     setUploadedFile(file)
     setFileContent('')
+    setFileEditable('')
     setFileParsing(true)
     try {
-      const text = await readFileAsText(file)
+      const text = await uploadFileToServer(file)
       setFileContent(text)
+      setFileEditable(text)
     } catch (err) {
-      setError(`Failed to read file: ${err.message}`)
+      setError(`Failed to process file: ${err.message}`)
       setUploadedFile(null)
     } finally {
       setFileParsing(false)
@@ -213,7 +145,7 @@ export default function ProductRequirementPage() {
   /* ── task builder ── */
   const buildTask = () => {
     if (activeTab === 'paste')  return pasteText.trim()
-    if (activeTab === 'upload') return fileContent.trim()
+    if (activeTab === 'upload') return fileEditable.trim()
     if (activeTab === 'jira') {
       const prefix = jiraKey.trim() ? `Jira Issue: ${jiraKey.trim()}\n\n` : ''
       return prefix + jiraText.trim()
@@ -223,9 +155,26 @@ export default function ProductRequirementPage() {
 
   const isReady = () => {
     if (activeTab === 'paste')  return pasteText.trim().length > 0
-    if (activeTab === 'upload') return fileContent.trim().length > 0 && !fileParsing
-    if (activeTab === 'jira')   return jiraText.trim().length > 0
+    if (activeTab === 'upload') return fileEditable.trim().length > 0 && !fileParsing
+    if (activeTab === 'jira')   return jiraText.trim().length > 0 || jiraFetched !== null
     return false
+  }
+
+  /* ── fetch jira issue ── */
+  const handleFetchJira = async () => {
+    if (!jiraKey.trim()) return
+    setJiraFetching(true)
+    setError('')
+    setJiraFetched(null)
+    try {
+      const data = await jiraAPI.fetchIssue(jiraKey.trim())
+      setJiraFetched(data)
+      setJiraText(data.formatted)  // auto-populate textarea with fetched content
+    } catch (err) {
+      setError(err.response?.data?.detail || `Failed to fetch Jira issue "${jiraKey}". Check the key and your Jira config.`)
+    } finally {
+      setJiraFetching(false)
+    }
   }
 
   /* ── generate ── */
@@ -238,8 +187,10 @@ export default function ProductRequirementPage() {
     setApproved(false)
     setApprovedAt(null)
     try {
-      const data = await agentAPI.run('product_requirement', task, null, 'groq')
+      const data = await agentAPI.run('product_requirement', task, null, 'ollama')
       setResult(data.result)
+      setRejected(false)
+      setRejectedAt(null)
       // scroll to result after render
       setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
     } catch (err) {
@@ -253,6 +204,13 @@ export default function ProductRequirementPage() {
   const handleApprove = () => {
     setApproved(true)
     setApprovedAt(new Date().toLocaleString())
+    filesAPI.saveOutput('product_requirement', result).catch(() => {})
+  }
+
+  /* ── reject ── */
+  const handleReject = () => {
+    setRejected(true)
+    setRejectedAt(new Date().toLocaleString())
   }
 
   /* ── tab switch ── */
@@ -261,6 +219,10 @@ export default function ProductRequirementPage() {
     setError('')
     setResult(null)
     setApproved(false)
+    setApprovedAt(null)
+    setRejected(false)
+    setRejectedAt(null)
+    setJiraFetched(null)
   }
 
   /* ── render ── */
@@ -352,7 +314,7 @@ export default function ProductRequirementPage() {
                       </div>
                       <button
                         style={s.clearBtn}
-                        onClick={e => { e.stopPropagation(); setUploadedFile(null); setFileContent('') }}
+                        onClick={e => { e.stopPropagation(); setUploadedFile(null); setFileContent(''); setFileEditable('') }}
                       >✕</button>
                     </div>
                   ) : (
@@ -366,15 +328,15 @@ export default function ProductRequirementPage() {
                   )}
                 </div>
                 {fileContent && (
-                  <div style={s.preview}>
-                    <div style={s.previewHead}>
-                      <span style={{ fontWeight: 600, fontSize: '0.78rem', color: '#374151' }}>📋 Preview</span>
-                      <span style={{ fontSize: '0.74rem', color: '#9ca3af' }}>{fileContent.length} chars</span>
-                    </div>
-                    <pre style={s.previewText}>
-                      {fileContent.slice(0, 500)}{fileContent.length > 500 ? '\n…' : ''}
-                    </pre>
-                  </div>
+                  <>
+                    <label style={s.sectionTitle}>Edit before generating</label>
+                    <textarea
+                      style={s.textarea}
+                      rows={6}
+                      value={fileEditable}
+                      onChange={e => setFileEditable(e.target.value)}
+                    />
+                  </>
                 )}
               </>
             )}
@@ -383,16 +345,68 @@ export default function ProductRequirementPage() {
             {activeTab === 'jira' && (
               <>
                 <p style={s.sectionTitle}>Jira User Story</p>
-                <input
-                  style={s.input}
-                  type="text"
-                  placeholder="Jira Issue Key (optional) — e.g. PROJ-123"
-                  value={jiraKey}
-                  onChange={e => setJiraKey(e.target.value)}
-                />
+
+                {/* Issue key input + Fetch button */}
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'stretch' }}>
+                  <input
+                    style={{ ...s.input, flex: 1 }}
+                    type="text"
+                    placeholder="Enter Jira Issue Key — e.g. PROJ-123"
+                    value={jiraKey}
+                    onChange={e => { setJiraKey(e.target.value); setJiraFetched(null) }}
+                    onKeyDown={e => e.key === 'Enter' && handleFetchJira()}
+                  />
+                  <button
+                    style={{
+                      ...s.fetchBtn,
+                      opacity: jiraFetching || !jiraKey.trim() ? 0.55 : 1,
+                      cursor:  jiraFetching || !jiraKey.trim() ? 'not-allowed' : 'pointer',
+                    }}
+                    onClick={handleFetchJira}
+                    disabled={jiraFetching || !jiraKey.trim()}
+                  >
+                    {jiraFetching
+                      ? <><span style={s.spin}>⟳</span> Fetching…</>
+                      : '🔍 Fetch'
+                    }
+                  </button>
+                </div>
+
+                {/* Fetched issue preview */}
+                {jiraFetched && (
+                  <div style={s.jiraPreviewCard}>
+                    <div style={s.jiraPreviewHead}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={s.jiraKeyBadge}>{jiraFetched.issue_key}</span>
+                        <span style={s.jiraIssueSummary}>{jiraFetched.summary}</span>
+                      </div>
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        {jiraFetched.raw?.status && (
+                          <span style={s.jiraMeta}>{jiraFetched.raw.status}</span>
+                        )}
+                        {jiraFetched.raw?.priority && (
+                          <span style={{ ...s.jiraMeta, background: 'rgba(245,158,11,0.1)', color: '#b45309', border: '1px solid rgba(245,158,11,0.2)' }}>
+                            {jiraFetched.raw.priority}
+                          </span>
+                        )}
+                        {jiraFetched.raw?.type && (
+                          <span style={{ ...s.jiraMeta, background: 'rgba(59,130,246,0.08)', color: '#1d4ed8', border: '1px solid rgba(59,130,246,0.15)' }}>
+                            {jiraFetched.raw.type}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <pre style={s.jiraPreviewText}>{jiraFetched.formatted}</pre>
+                  </div>
+                )}
+
+                {/* Manual override textarea */}
+                <label style={{ ...s.sectionTitle, marginTop: jiraFetched ? '4px' : '0' }}>
+                  {jiraFetched ? 'Edit before generating (optional)' : 'Or paste Jira story manually'}
+                </label>
                 <textarea
-                  style={{ ...s.textarea, marginTop: '10px' }}
-                  rows={8}
+                  style={s.textarea}
+                  rows={jiraFetched ? 6 : 9}
                   placeholder={
                     'Paste the Jira story description or acceptance criteria here…\n\n' +
                     'Example:\n' +
@@ -425,7 +439,7 @@ export default function ProductRequirementPage() {
             >
               {loading
                 ? <><span style={s.spin}>⟳</span> Analyzing requirements…</>
-                : '📋  Generate Requirements Document'
+                : '📋  Generate Refined Requirement Document'
               }
             </button>
           </div>
@@ -433,18 +447,29 @@ export default function ProductRequirementPage() {
 
         {/* ── Result pane ── */}
         {result && (
-          <div ref={resultRef} style={{ ...s.resultCard, borderColor: approved ? '#bbf7d0' : '#d8b4fe' }}>
+          <div ref={resultRef} style={{
+            ...s.resultCard,
+            borderColor: approved ? '#bbf7d0' : rejected ? '#fecaca' : '#d8b4fe',
+          }}>
 
             {/* Result header */}
-            <div style={{ ...s.resultHead, background: approved ? 'rgba(34,197,94,0.05)' : 'rgba(124,58,237,0.04)' }}>
+            <div style={{
+              ...s.resultHead,
+              background: approved ? 'rgba(34,197,94,0.05)' : rejected ? 'rgba(239,68,68,0.05)' : 'rgba(124,58,237,0.04)',
+            }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                <span style={{ fontSize: '1rem' }}>{approved ? '✅' : '📄'}</span>
-                <span style={{ ...s.resultTitle, color: approved ? '#166534' : '#4c1d95' }}>
-                  {approved ? 'Requirements Document — Approved' : 'Requirements Document Generated'}
+                <span style={{ fontSize: '1rem' }}>{approved ? '✅' : rejected ? '❌' : '📄'}</span>
+                <span style={{ ...s.resultTitle, color: approved ? '#166534' : rejected ? '#dc2626' : '#4c1d95' }}>
+                  {approved ? 'Requirements Document — Approved' : rejected ? 'Requirements Document — Rejected' : 'Requirements Document Generated'}
                 </span>
                 {approved && (
                   <span style={s.approvedBadge}>
                     ✅ Approved · {approvedAt}
+                  </span>
+                )}
+                {rejected && (
+                  <span style={s.rejectedBadge}>
+                    ❌ Rejected · {rejectedAt}
                   </span>
                 )}
               </div>
@@ -457,9 +482,14 @@ export default function ProductRequirementPage() {
                 <button style={s.pdfBtn} onClick={() => downloadAsPDF(result, approved)}>
                   ⬇️ Download PDF
                 </button>
-                {!approved && (
+                {!approved && !rejected && (
                   <button style={s.approveBtn} onClick={handleApprove}>
                     ✅ Approve
+                  </button>
+                )}
+                {!approved && !rejected && (
+                  <button style={s.rejectBtn} onClick={handleReject}>
+                    ❌ Reject
                   </button>
                 )}
               </div>
@@ -467,24 +497,32 @@ export default function ProductRequirementPage() {
 
             {/* Document body */}
             <div style={s.resultBody}>
-              {/* Approved watermark strip */}
               {approved && (
                 <div style={s.approvedStrip}>
                   ✅ This requirements document has been approved and is locked for review.
                 </div>
               )}
-              <pre style={{ ...s.resultText, opacity: approved ? 0.92 : 1 }}>{result}</pre>
+              {rejected && (
+                <div style={s.rejectedStrip}>
+                  ❌ This requirements document has been rejected. Click "Generate Refined Requirement Document" to try again.
+                </div>
+              )}
+              <pre style={{ ...s.resultText, opacity: rejected ? 0.5 : 1 }}>{result}</pre>
             </div>
 
             {/* Footer */}
-            <div style={{ ...s.resultFoot, background: approved ? '#f0fdf4' : '#faf5ff' }}>
+            <div style={{ ...s.resultFoot, background: approved ? '#f0fdf4' : rejected ? '#fef2f2' : '#faf5ff' }}>
               {approved
                 ? <span style={{ color: '#16a34a', fontWeight: 600 }}>
                     🔒 Document approved — download the PDF to share with your team.
                   </span>
-                : <span style={{ color: '#7c3aed' }}>
-                    💡 Review the document above. Click <strong>Approve</strong> to lock it, or <strong>Download PDF</strong> to save.
+                : rejected
+                  ? <span style={{ color: '#dc2626', fontWeight: 600 }}>
+                    ❌ Document rejected — click <strong>Generate Refined Requirement Document</strong> to try again.
                   </span>
+                  : <span style={{ color: '#7c3aed' }}>
+                      💡 Review the document above. Click <strong>Approve</strong> to lock it or <strong>Reject</strong> to discard it.
+                    </span>
               }
             </div>
           </div>
@@ -567,6 +605,41 @@ const s = {
     maxHeight: '120px', overflowY: 'auto', fontFamily: 'inherit', margin: 0,
   },
 
+  /* fetch button */
+  fetchBtn: {
+    padding: '10px 18px', borderRadius: '8px', fontWeight: 700, fontSize: '0.875rem',
+    border: 'none', background: 'linear-gradient(135deg, #2563eb, #3b82f6)',
+    color: '#fff', display: 'inline-flex', alignItems: 'center', gap: '6px',
+    boxShadow: '0 2px 8px rgba(37,99,235,0.25)', transition: 'opacity 0.2s', whiteSpace: 'nowrap',
+  },
+
+  /* jira preview card */
+  jiraPreviewCard: {
+    border: '1px solid #bfdbfe', borderRadius: '10px',
+    background: '#eff6ff', overflow: 'hidden',
+  },
+  jiraPreviewHead: {
+    display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
+    padding: '10px 14px', borderBottom: '1px solid #bfdbfe',
+    background: '#dbeafe', flexWrap: 'wrap', gap: '8px',
+  },
+  jiraKeyBadge: {
+    padding: '2px 8px', borderRadius: '5px', fontSize: '0.75rem', fontWeight: 700,
+    background: '#2563eb', color: '#fff', flexShrink: 0,
+  },
+  jiraIssueSummary: {
+    fontSize: '0.85rem', fontWeight: 600, color: '#1e3a8a',
+  },
+  jiraMeta: {
+    padding: '2px 8px', borderRadius: '5px', fontSize: '0.72rem', fontWeight: 600,
+    background: 'rgba(34,197,94,0.1)', color: '#166534', border: '1px solid rgba(34,197,94,0.2)',
+  },
+  jiraPreviewText: {
+    padding: '12px 14px', fontSize: '0.8rem', lineHeight: 1.65,
+    whiteSpace: 'pre-wrap', wordBreak: 'break-word', color: '#1e3a8a',
+    maxHeight: '200px', overflowY: 'auto', fontFamily: 'inherit', margin: 0,
+  },
+
   /* error */
   errorBox: {
     background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)',
@@ -615,12 +688,25 @@ const s = {
     background: 'linear-gradient(135deg, #16a34a, #22c55e)', border: 'none',
     color: '#fff', cursor: 'pointer', boxShadow: '0 2px 8px rgba(22,163,74,0.3)',
   },
+  rejectBtn: {
+    padding: '6px 18px', borderRadius: '7px', fontSize: '0.8rem', fontWeight: 700,
+    background: 'linear-gradient(135deg, #dc2626, #ef4444)', border: 'none',
+    color: '#fff', cursor: 'pointer', boxShadow: '0 2px 8px rgba(220,38,38,0.3)',
+  },
 
   /* result body */
   resultBody: { position: 'relative' },
   approvedStrip: {
     background: '#dcfce7', borderBottom: '1px solid #bbf7d0',
     padding: '8px 20px', fontSize: '0.8rem', fontWeight: 600, color: '#166534',
+  },
+  rejectedBadge: {
+    padding: '3px 10px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 600,
+    background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca',
+  },
+  rejectedStrip: {
+    background: '#fef2f2', borderBottom: '1px solid #fecaca',
+    padding: '8px 20px', fontSize: '0.8rem', fontWeight: 600, color: '#dc2626',
   },
   resultText: {
     padding: '18px 20px', fontSize: '0.875rem', lineHeight: 1.8,

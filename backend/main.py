@@ -3,6 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from api.auth_routes import router as auth_router
 from api.agent_routes import router as agent_router
+from api.jira_routes import router as jira_router
+from api.file_routes import router as file_router
+from api.config_routes import router as config_router
 
 app = FastAPI(
     title="Test Automator API",
@@ -22,6 +25,9 @@ app.add_middleware(
 # Routers
 app.include_router(auth_router)
 app.include_router(agent_router)
+app.include_router(jira_router)
+app.include_router(file_router)
+app.include_router(config_router)
 
 
 @app.get("/")

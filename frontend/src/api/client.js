@@ -53,4 +53,66 @@ export const agentAPI = {
   },
 }
 
+export const jiraAPI = {
+  fetchIssue: async (issueKey) => {
+    const res = await client.get(`/jira/issue/${issueKey}`)
+    return res.data
+  },
+}
+
+export const filesAPI = {
+  upload: async (file, agent = 'product_requirement') => {
+    const form = new FormData()
+    form.append('file', file)
+    const res = await client.post(`/files/upload?agent=${encodeURIComponent(agent)}`, form)
+    return res.data
+  },
+
+  saveOutput: async (agent, content) => {
+    const res = await client.post('/files/save-output', { agent, content })
+    return res.data
+  },
+
+  listOutput: async (agent) => {
+    const params = agent ? `?agent=${encodeURIComponent(agent)}` : ''
+    const res = await client.get(`/files/list-output${params}`)
+    return res.data
+  },
+
+  readOutput: async (filename) => {
+    const res = await client.get(`/files/read-output/${filename}`)
+    return res.data
+  },
+}
+
+export const configAPI = {
+  getJira: async () => {
+    const res = await client.get('/config/jira')
+    return res.data
+  },
+  updateJira: async (data) => {
+    const res = await client.post('/config/jira', data)
+    return res.data
+  },
+}
+
+export const userAPI = {
+  list: async () => {
+    const res = await client.get('/auth/users')
+    return res.data
+  },
+  create: async (data) => {
+    const res = await client.post('/auth/users', data)
+    return res.data
+  },
+  update: async (userId, data) => {
+    const res = await client.put(`/auth/users/${userId}`, data)
+    return res.data
+  },
+  delete: async (userId) => {
+    const res = await client.delete(`/auth/users/${userId}`)
+    return res.data
+  },
+}
+
 export default client

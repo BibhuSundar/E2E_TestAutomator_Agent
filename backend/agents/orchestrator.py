@@ -6,6 +6,7 @@ from typing import Optional
 
 from agents.product_requirement_agent import ProductRequirementAgent
 from agents.planning_agent import PlanningAgent
+from agents.test_strategy_agent import TestStrategyAgent
 from agents.designing_agent import DesigningAgent
 from agents.automation_agent import AutomationAgent
 from agents.code_review_agent import CodeReviewAgent
@@ -24,6 +25,7 @@ class TestAutomatorOrchestrator:
         self._registry = {
             "product_requirement": ProductRequirementAgent(),
             "planning": PlanningAgent(),
+            "test_strategy": TestStrategyAgent(),
             "designing": DesigningAgent(),
             "automation": AutomationAgent(),
             "code_review": CodeReviewAgent(),
@@ -36,7 +38,7 @@ class TestAutomatorOrchestrator:
         agent_name: str,
         task: str,
         context: Optional[str] = None,
-        llm_provider: str = "groq",
+        llm_provider: str = None,
     ) -> str:
         agent = self._registry.get(agent_name)
         if not agent:

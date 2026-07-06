@@ -11,6 +11,9 @@ import AgentPage      from './pages/AgentPage'
 import ProductRequirementPage from './pages/ProductRequirementPage'
 import PlanningPage   from './pages/PlanningPage'
 import DesigningPage  from './pages/DesigningPage'
+import AutomationPage from './pages/AutomationPage'
+import CodeReviewPage from './pages/CodeReviewPage'
+import ExecutionPage  from './pages/ExecutionPage'
 import ConfigurePage  from './pages/ConfigurePage'
 import SupportPage    from './pages/SupportPage'
 
@@ -23,30 +26,6 @@ function Protected({ children }) {
 }
 
 const AGENT_ROUTES = [
-  {
-    path: '/automation',
-    agentId: 'automation',
-    agentName: 'Automation',
-    description: 'Generate maintainable automation scripts for Selenium, Playwright, Cypress, pytest, or JUnit.',
-    placeholder: 'e.g. Generate Playwright test scripts for login functionality using the Page Object Model pattern...',
-    permission: 'automation',
-  },
-  {
-    path: '/code-review',
-    agentId: 'code_review',
-    agentName: 'Code Review',
-    description: 'Review test code for quality, maintainability, correctness, and best practices adherence.',
-    placeholder: 'e.g. Review this Selenium test class for anti-patterns and improvement opportunities...',
-    permission: 'code_review',
-  },
-  {
-    path: '/execution',
-    agentId: 'execution',
-    agentName: 'Execution',
-    description: 'Manage test execution, analyze results, and generate detailed reports with failure analysis.',
-    placeholder: 'e.g. Analyze these test results and identify patterns in failures: 15/20 tests passed, 5 failed on login module...',
-    permission: 'execution',
-  },
   {
     path: '/deployer',
     agentId: 'deployer',
@@ -69,6 +48,9 @@ function AppRoutes() {
       <Route path="/product-requirement" element={<Protected><ProductRequirementPage /></Protected>} />
       <Route path="/planning"            element={<Protected><PlanningPage /></Protected>} />
       <Route path="/designing"           element={<Protected><DesigningPage /></Protected>} />
+      <Route path="/automation"          element={<Protected><AutomationPage /></Protected>} />
+      <Route path="/code-review"         element={<Protected><CodeReviewPage /></Protected>} />
+      <Route path="/execution"           element={<Protected><ExecutionPage /></Protected>} />
       <Route path="/configure"           element={<Protected><ConfigurePage /></Protected>} />
       <Route path="/support"             element={<Protected><SupportPage /></Protected>} />
 

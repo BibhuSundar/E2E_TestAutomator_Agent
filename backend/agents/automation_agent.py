@@ -2,6 +2,7 @@ from agents.base_agent import BaseTestAgent
 
 
 class AutomationAgent(BaseTestAgent):
+    default_llm_provider = "ollama"
     role = "Test Automation Engineer"
     goal = (
         "Generate high-quality, maintainable automated test scripts using frameworks like "

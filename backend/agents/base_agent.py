@@ -17,6 +17,8 @@ class BaseTestAgent:
     role: str      = "Test Agent"
     goal: str      = "Assist in software testing"
     backstory: str = "An experienced QA professional."
+    default_llm_provider: str = "groq"
+    tools: list    = []
 
     # ── Direct Groq call via LangChain (no CrewAI) ──────────────────────────
     async def _execute_groq(self, full_task: str) -> str:
@@ -55,6 +57,7 @@ class BaseTestAgent:
             llm=model_name,
             verbose=False,
             allow_delegation=False,
+            tools=self.tools,
         )
 
         task = Task(
@@ -78,14 +81,14 @@ class BaseTestAgent:
         self,
         task_description: str,
         context: str = None,
-        llm_provider: str = "groq",
+        llm_provider: str = None,
     ) -> str:
         try:
             full_task = task_description
             if context:
                 full_task = f"Context:\n{context}\n\nTask:\n{task_description}"
 
-            provider = (llm_provider or settings.default_llm_provider).lower().strip()
+            provider = (llm_provider or self.default_llm_provider or settings.default_llm_provider).lower().strip()
 
             if provider == "groq":
                 return await self._execute_groq(full_task)
