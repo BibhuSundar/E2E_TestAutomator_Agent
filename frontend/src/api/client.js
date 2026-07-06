@@ -115,4 +115,11 @@ export const userAPI = {
   },
 }
 
+export const supportAPI = {
+  chat: async (question) => {
+    const res = await client.post('/support/chat', { question })
+    return res.data
+  },
+}
+
 export default client

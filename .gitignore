@@ -29,3 +29,4 @@ frontend/dist/
 
 # IDE
 .vscode/
+chroma_db

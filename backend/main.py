@@ -6,6 +6,7 @@ from api.agent_routes import router as agent_router
 from api.jira_routes import router as jira_router
 from api.file_routes import router as file_router
 from api.config_routes import router as config_router
+from api.support_routes import router as support_router
 
 app = FastAPI(
     title="Test Automator API",
@@ -28,6 +29,7 @@ app.include_router(agent_router)
 app.include_router(jira_router)
 app.include_router(file_router)
 app.include_router(config_router)
+app.include_router(support_router)
 
 
 @app.get("/")
