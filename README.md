@@ -17,6 +17,7 @@ Supports **Groq**, **OpenAI**, **Ollama**, **OpenRouter**, and **Claude** as LLM
 - **JWT authentication** — Secure login with token-based sessions
 - **Configure page** — System Configuration (LLM provider, model), Jira Configuration (URL, credentials, project key), User Management (add/edit/delete users)
 - **Jira integration** — Fetch user stories by issue key, create issues, configure Jira connection via UI
+- **Announcement Banner** — Scrolling MVP announcement displayed on Landing, Login, Sign Up, and Forgot Password pages
 
 ---
 

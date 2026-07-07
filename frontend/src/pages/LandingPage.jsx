@@ -185,7 +185,17 @@ export default function LandingPage() {
   const [activeCard, setActiveCard] = useState(null)
 
   return (
-    <div style={styles.root}>
+    <>
+      {/* Announcement Banner — fixed at very top */}
+      <div style={styles.banner}>
+        <div style={styles.bannerScrollWrap}>
+          <span style={styles.bannerScroll}>
+            📢 Test Automator is in MVP Stage, Soon we'll get the production-ready Test Automator.
+          </span>
+        </div>
+      </div>
+
+      <div style={styles.root}>
       {/* Logo */}
       <div style={styles.logoWrap}>
         <img
@@ -253,6 +263,7 @@ export default function LandingPage() {
       {/* Modal */}
       <CardModal card={activeCard} onClose={() => setActiveCard(null)} />
     </div>
+    </>
   )
 }
 
@@ -269,6 +280,26 @@ const styles = {
     padding: '32px 24px',
     boxSizing: 'border-box',
     fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+  },
+  banner: {
+    width: '100%',
+    background: 'transparent',
+    display: 'flex',
+    alignItems: 'center',
+    padding: '8px 18px',
+    boxSizing: 'border-box',
+    overflow: 'hidden',
+    position: 'relative',
+    zIndex: 10,
+  },
+  bannerScrollWrap: { flex: 1, overflow: 'hidden' },
+  bannerScroll: {
+    display: 'inline-block',
+    whiteSpace: 'nowrap',
+    animation: 'scrollBanner 30s linear infinite',
+    fontSize: '1rem',
+    fontWeight: 600,
+    color: '#7c3aed',
   },
   logoWrap: { marginBottom: '16px' },
   logoImg: {

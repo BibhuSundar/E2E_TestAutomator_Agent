@@ -24,7 +24,15 @@ export default function LoginPage() {
   }
 
   return (
-    <div style={styles.root}>
+    <>
+      <div style={styles.banner}>
+        <div style={styles.bannerScrollWrap}>
+          <span style={styles.bannerScroll}>
+            📢 Test Automator is in MVP Stage, Soon we'll get the production-ready Test Automator.
+          </span>
+        </div>
+      </div>
+      <div style={styles.root}>
       <div style={styles.card}>
 
         {/* Logo */}
@@ -99,6 +107,7 @@ export default function LoginPage() {
 
       </div>
     </div>
+    </>
   )
 }
 
@@ -239,5 +248,25 @@ const styles = {
     color: '#7c3aed',
     fontWeight: 600,
     textDecoration: 'none',
+  },
+  banner: {
+    width: '100%',
+    background: 'transparent',
+    display: 'flex',
+    alignItems: 'center',
+    padding: '8px 18px',
+    boxSizing: 'border-box',
+    overflow: 'hidden',
+    position: 'relative',
+    zIndex: 10,
+  },
+  bannerScrollWrap: { flex: 1, overflow: 'hidden' },
+  bannerScroll: {
+    display: 'inline-block',
+    whiteSpace: 'nowrap',
+    animation: 'scrollBanner 30s linear infinite',
+    fontSize: '1rem',
+    fontWeight: 600,
+    color: '#7c3aed',
   },
 }
