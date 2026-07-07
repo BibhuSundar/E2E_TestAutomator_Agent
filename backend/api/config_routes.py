@@ -16,6 +16,7 @@ class JiraConfigUpdate(BaseModel):
     jira_base_url: str = ""
     jira_email: str = ""
     jira_api_token: str = ""
+    jira_project_key: str = ""
 
 
 def _mask(value: str | None) -> str:
@@ -76,6 +77,7 @@ async def get_jira_config(current_user: UserOut = Depends(get_current_user)):
         "jira_email": env.get("JIRA_EMAIL", ""),
         "jira_api_token": _mask(token) if token else "",
         "has_token": bool(token),
+        "jira_project_key": env.get("JIRA_PROJECT_KEY", ""),
     }
 
 
@@ -94,6 +96,8 @@ async def update_jira_config(
         updates["JIRA_EMAIL"] = body.jira_email
     if body.jira_api_token:
         updates["JIRA_API_TOKEN"] = body.jira_api_token
+    if body.jira_project_key:
+        updates["JIRA_PROJECT_KEY"] = body.jira_project_key
 
     _write_env(updates)
 

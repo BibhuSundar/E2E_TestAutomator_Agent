@@ -1,5 +1,5 @@
 """
-Jira Routes — fetch issue details by key.
+Jira Routes — fetch issue details by key and create issues.
 
 Requires in .env:
   JIRA_BASE_URL   = https://your-org.atlassian.net
@@ -15,8 +15,16 @@ from fastapi import APIRouter, Depends, HTTPException
 from auth.dependencies import get_current_user
 from auth.models import UserOut
 from config.settings import settings
+from pydantic import BaseModel
 
 router = APIRouter(prefix="/api/jira", tags=["jira"])
+
+
+class CreateIssueRequest(BaseModel):
+    project_key: str
+    summary: str
+    description: str
+    issue_type: str = "Story"
 
 
 def _get_auth_header() -> str:
@@ -127,3 +135,69 @@ def _extract_adf_text(adf: dict | None) -> str:
 
     walk(adf)
     return "".join(texts).strip()
+
+
+@router.post("/create-issue")
+async def create_jira_issue(
+    req: CreateIssueRequest,
+    current_user: UserOut = Depends(get_current_user),
+):
+    """
+    Create a Jira issue (default: User Story) with the given project, summary, and description.
+    Used to upload approved test plans as Jira user stories.
+    """
+    if not settings.jira_base_url or not settings.jira_email or not settings.jira_api_token:
+        raise HTTPException(
+            status_code=503,
+            detail="Jira is not configured. Set JIRA_BASE_URL, JIRA_EMAIL, and JIRA_API_TOKEN in .env"
+        )
+
+    url = f"{settings.jira_base_url.rstrip('/')}/rest/api/3/issue"
+
+    headers = {
+        "Authorization": _get_auth_header(),
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+    }
+
+    body = {
+        "fields": {
+            "project": {"key": req.project_key},
+            "summary": req.summary,
+            "description": {
+                "type": "doc",
+                "version": 1,
+                "content": [
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": line,
+                            }
+                        ],
+                    }
+                    for line in req.description.strip().split("\n")
+                    if line.strip()
+                ],
+            },
+            "issuetype": {"name": req.issue_type},
+        }
+    }
+
+    async with httpx.AsyncClient(timeout=15.0) as client:
+        resp = await client.post(url, headers=headers, json=body)
+
+    if resp.status_code == 401:
+        raise HTTPException(status_code=401, detail="Jira authentication failed. Check your JIRA_EMAIL and JIRA_API_TOKEN.")
+    if resp.status_code == 400:
+        raise HTTPException(status_code=400, detail=f"Invalid request: {resp.text}")
+    if resp.status_code not in (200, 201):
+        raise HTTPException(status_code=resp.status_code, detail=f"Jira API error: {resp.text}")
+
+    data = resp.json()
+    return {
+        "success": True,
+        "issue_key": data.get("key"),
+        "issue_url": f"{settings.jira_base_url.rstrip('/')}/browse/{data.get('key')}",
+    }

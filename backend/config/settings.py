@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     jira_base_url: Optional[str] = None
     jira_email: Optional[str] = None
     jira_api_token: Optional[str] = None
+    jira_project_key: Optional[str] = None
 
     # App
     app_name: str = "Test Automator"

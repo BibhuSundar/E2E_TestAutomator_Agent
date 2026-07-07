@@ -7,15 +7,16 @@ Supports **Groq**, **OpenAI**, **Ollama**, **OpenRouter**, and **Claude** as LLM
 
 ## Features
 
-- **5 AI Agent Tabs** — Product Requirement, Planning, Designing, Automation, Code Review (all with approve/reject workflow)
+- **5 AI Agent Tabs** — Product Requirement, Planning (with Test Strategy), Designing, Automation, Code Review (all with approve/reject workflow)
 - **5 LLM Providers** — Groq, OpenAI, Ollama (local), OpenRouter, Claude
 - **Role-based access control** — Admin, QA Manager, QA Lead, QA Analyst
 - **Rich input modes** — Paste text, upload files (.txt, .md, .pdf, .docx), Jira user stories
 - **Editable previews** — All uploaded/generated content shown in editable textareas
 - **Approve / Reject workflow** — Output saved to `output/` folder only on approval
+- **Upload Jira** — After approval, upload any document (Requirement, Test Plan, Test Strategy, Test Design, Code Review) as a Jira issue with one click
 - **JWT authentication** — Secure login with token-based sessions
-- **Configure page** — System Configuration (LLM provider, model), Jira Configuration (credentials), User Management (add/edit/delete users)
-- **Jira integration** — Fetch user stories by issue key, configure Jira URL/credentials via UI
+- **Configure page** — System Configuration (LLM provider, model), Jira Configuration (URL, credentials, project key), User Management (add/edit/delete users)
+- **Jira integration** — Fetch user stories by issue key, create issues, configure Jira connection via UI
 
 ---
 
@@ -50,11 +51,11 @@ Test Automator
 ├── frontend/                       React + Vite
 │   └── src/
 │       ├── pages/
-│       │   ├── ProductRequirementPage.jsx   Generate / Approve / Reject
-│       │   ├── PlanningPage.jsx             Test Plan + Test Strategy
-│       │   ├── DesigningPage.jsx            Design Test Cases
+│       │   ├── ProductRequirementPage.jsx   Generate / Approve / Reject / Upload Jira
+│       │   ├── PlanningPage.jsx             Test Plan + Test Strategy + Upload Jira
+│       │   ├── DesigningPage.jsx            Design Test Cases + Upload Jira
 │       │   ├── AutomationPage.jsx           Automation scripts
-│       │   ├── CodeReviewPage.jsx           Code review
+│       │   ├── CodeReviewPage.jsx           Code review + Upload Jira
 │       │   ├── DashboardPage.jsx
 │       │   ├── LoginPage.jsx
 │       │   ├── RegisterPage.jsx
@@ -128,9 +129,10 @@ SECRET_KEY=change-this-in-production
 ACCESS_TOKEN_EXPIRE_MINUTES=480
 
 # ── Jira (optional) ──
-JIRA_URL=https://your-domain.atlassian.net
-JIRA_USERNAME=your-email@example.com
+JIRA_BASE_URL=https://your-domain.atlassian.net
+JIRA_EMAIL=your-email@example.com
 JIRA_API_TOKEN=your-jira-api-token
+JIRA_PROJECT_KEY=KAN
 ```
 
 Jira credentials can also be configured from the **Configure → Jira Configuration** page.
@@ -181,7 +183,7 @@ Additional users can be created from **Configure → User Management**.
 Three tabs available to Admin users:
 
 1. **System Configuration** — Select LLM provider, enter API key (only the selected provider's field shows), set model name
-2. **Jira Configuration** — Set Jira URL, username, and API token (saved to `.env`)
+2. **Jira Configuration** — Set Jira base URL, email, API token, and project key (saved to `.env`). The project key is used when uploading documents as Jira issues.
 3. **User Management** — View all users, edit role via dropdown, activate/deactivate, or permanently delete users
 
 ---
@@ -202,10 +204,14 @@ User Input (Paste / Upload / Jira)
         ↓
   LLM response returned
         ↓
-  Editable result pane → Copy / Download PDF / Reject / Approve
+  Editable result pane → Copy / Download PDF / Reject / Approve / Upload Jira
         ↓
   Approve → saved to output/{agent}/ folder
+         → Upload Jira button enabled
   Reject  → discarded
+        ↓
+  Upload Jira → creates Jira issue via POST /api/jira/create-issue
+             → project key auto-loaded from .env or Configure page
 ```
 
 ---
@@ -240,3 +246,4 @@ User Input (Paste / Upload / Jira)
 | GET | `/api/files/list-output` | List saved outputs |
 | GET | `/api/files/read-output/{file}` | Read saved output |
 | GET | `/api/jira/issue/{key}` | Fetch Jira issue |
+| POST | `/api/jira/create-issue` | Create Jira issue (used by Upload Jira) |

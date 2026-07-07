@@ -150,6 +150,7 @@ function JiraConfig() {
   const [email, setEmail] = useState('')
   const [apiToken, setApiToken] = useState('')
   const [hasToken, setHasToken] = useState(false)
+  const [projectKey, setProjectKey] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -161,6 +162,7 @@ function JiraConfig() {
         setBaseUrl(data.jira_base_url || '')
         setEmail(data.jira_email || '')
         setHasToken(data.has_token || false)
+        setProjectKey(data.jira_project_key || '')
       })
       .catch(() => setError('Failed to load Jira configuration.'))
       .finally(() => setLoading(false))
@@ -174,6 +176,7 @@ function JiraConfig() {
         jira_base_url: baseUrl,
         jira_email: email,
         jira_api_token: apiToken,
+        jira_project_key: projectKey,
       })
       setSaved(true)
       setHasToken(true)
@@ -242,6 +245,17 @@ function JiraConfig() {
             : 'Create an API token from the Atlassian dashboard and paste it here'
           }
         </p>
+      </div>
+
+      <div style={styles.section}>
+        <label style={styles.label}>Jira Project Key</label>
+        <input
+          style={styles.input}
+          placeholder="e.g. KAN"
+          value={projectKey}
+          onChange={e => setProjectKey(e.target.value.toUpperCase())}
+        />
+        <p style={styles.hint}>The project key where test plans and requirements will be uploaded (e.g. KAN, PROJ, TEST)</p>
       </div>
 
       {error && <div style={styles.errorBox}>⚠️ {error}</div>}

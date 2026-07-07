@@ -58,6 +58,16 @@ export const jiraAPI = {
     const res = await client.get(`/jira/issue/${issueKey}`)
     return res.data
   },
+
+  createIssue: async (projectKey, summary, description, issueType = 'Story') => {
+    const res = await client.post('/jira/create-issue', {
+      project_key: projectKey,
+      summary,
+      description,
+      issue_type: issueType,
+    })
+    return res.data
+  },
 }
 
 export const filesAPI = {
