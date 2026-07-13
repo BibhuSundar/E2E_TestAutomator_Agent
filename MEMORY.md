@@ -7,13 +7,14 @@ Tracks all changes made to the project.
 ## 2026-07-13
 
 ### Logo update
-- Updated all references from `/abbcreation-logo.jpg` to `/NatWest_Logo.png` in:
+- Updated all references from `/abbcreation-logo.jpg` → `/NatWest_Logo.png`
+- Later changed to `/abbcreationlogo.png` (current) in:
   - `frontend/src/components/Logo.jsx`
   - `frontend/src/pages/LandingPage.jsx`
   - `frontend/src/pages/LoginPage.jsx`
   - `frontend/src/pages/RegisterPage.jsx`
   - `frontend/src/pages/ForgotPasswordPage.jsx`
-- Renamed `frontend/public/natwest_logo.png` → `frontend/public/NatWest_Logo.png`
+- Final logo file: `frontend/public/abbcreationlogo.png`
 
 ### Switched default LLM to Groq
 - **`.env`**: `DEFAULT_LLM_PROVIDER=ollama` → `DEFAULT_LLM_PROVIDER=groq`
@@ -27,3 +28,10 @@ Tracks all changes made to the project.
 - `backend/main.py` CORS — kept Vercel regex (still needed for Railway).
 - **`backend/Dockerfile`**: Created production-ready Dockerfile (no `--reload`).
 - **`frontend/vercel.json`**: Updated proxy target placeholder to Railway URL.
+
+### Production deployment completed
+- **Railway**: Backend deployed at `https://e2etestautomatoragent-production.up.railway.app` — verified `/` returns `{"message":"Test Automator API is running"}`
+- **Vercel**: Frontend ready for deploy — root directory `frontend/`, framework Vite, API proxied via `vercel.json`
+- **README.md**: Added Deployment section with Railway & Vercel setup steps
+- **Default LLM**: Groq (no Ollama in production)
+- **`.env` excluded**: All API keys must be set via Railway dashboard env vars

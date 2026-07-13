@@ -7,5 +7,32 @@
     "role": "Admin",
     "hashed_password": "$2b$12$seLQR9riIBRxG8mAx5b8tePFKAqBj.TV3HhSrXtfk1Hv3.lzbnWhC",
     "is_active": true
+  },
+  {
+    "id": "2",
+    "username": "bibhu_das",
+    "email": "bibhu.das@gmail.com",
+    "full_name": "Bibhu Sundar Das",
+    "role": "QA Manager",
+    "hashed_password": "$2b$12$vpTdekWIKEuvIBGPvAiqv.WWGAKlImB3a5fMy/bQJnDfdUkyKyJu.",
+    "is_active": true
+  },
+  {
+    "id": "3",
+    "username": "bibhu_sd",
+    "email": "bibhu.sd@gmail.com",
+    "full_name": "Bibhu SD",
+    "role": "QA Manager",
+    "hashed_password": "$2b$12$uuwi603E0TLs4atkJ0CV1eeWp.J.zNjz8L5kkpoC6fIqmomZM49wy",
+    "is_active": true
+  },
+  {
+    "id": "4",
+    "username": "test_user",
+    "email": "test.user@gmail.com",
+    "full_name": "Test User",
+    "role": "QA Manager",
+    "hashed_password": "$2b$12$XYgaJkE/flgeXOTc1JaGDeDzN/GlSV6/UHIRLx382Fgsr.9uewq0W",
+    "is_active": true
   }
 ]

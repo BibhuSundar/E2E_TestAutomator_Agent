@@ -2,7 +2,7 @@ import React from 'react'
 
 /**
  * Logo component.
- * Tries to load NatWest_Logo.png from /public.
+ * Tries to load abbcreationlogo.png from /public.
  * Falls back to SVG text logo if image is not found.
  */
 export default function Logo({ size = 'md', showText = true }) {
@@ -16,9 +16,9 @@ export default function Logo({ size = 'md', showText = true }) {
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-      {/* Logo image — place your file at frontend/public/NatWest_Logo.png */}
+      {/* Logo image — place your file at frontend/public/abbcreationlogo.png */}
       <img
-        src="/NatWest_Logo.png"
+        src="/abbcreationlogo.png"
         alt="ABBCreation Logo"
         width={s.img}
         height={s.img}

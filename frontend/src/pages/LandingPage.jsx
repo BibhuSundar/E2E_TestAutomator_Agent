@@ -199,7 +199,7 @@ export default function LandingPage() {
       {/* Logo */}
       <div style={styles.logoWrap}>
         <img
-          src="/NatWest_Logo.png"
+          src="/abbcreationlogo.png"
           alt="Logo"
           style={styles.logoImg}
           onError={e => {

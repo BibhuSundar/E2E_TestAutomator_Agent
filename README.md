@@ -74,6 +74,43 @@ Test Automator
 
 ---
 
+## Deployment
+
+### Production URLs
+
+| Service | URL |
+|---------|-----|
+| **Frontend (Vercel)** | `https://frontend-xxxxx.vercel.app` |
+| **Backend API (Railway)** | `https://e2etestautomatoragent-production.up.railway.app` |
+
+### Deploy Backend (Railway)
+
+1. Push code to GitHub
+2. Go to [railway.app](https://railway.app) → New Project → Deploy from GitHub
+3. Select repo → Root directory: `backend/`
+4. Add environment variables (API keys, JWT secret, Jira config)
+5. Railway auto-builds and deploys
+6. Generate a public domain → set port **8000**
+
+### Deploy Frontend (Vercel)
+
+1. Go to [vercel.com](https://vercel.com) → New Project → Import GitHub repo
+2. Root directory: `frontend/`
+3. Framework preset: **Vite**
+4. Deploy — API calls are proxied to Railway via `vercel.json`
+
+### Redeploy After Changes
+
+```bash
+git add .
+git commit -m "your changes"
+git push
+```
+
+Railway and Vercel auto-deploy on push to `main`. No manual steps needed.
+
+---
+
 ## Quick Start (Local)
 
 ### 1. Backend
