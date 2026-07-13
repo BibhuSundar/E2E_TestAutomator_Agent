@@ -43,6 +43,7 @@ export default function ExecutionPage() {
   const { hasPermission } = useAuth()
 
   const [browser, setBrowser] = useState('Chromium')
+  const [headless, setHeadless] = useState(true)
 
   const [outputFiles, setOutputFiles] = useState([])
   const [selectedFile, setSelectedFile] = useState(null)
@@ -96,7 +97,7 @@ export default function ExecutionPage() {
   }
 
   const buildTask = () => {
-    return `Browser: ${browser}\n\n${existingContent}`
+    return `Browser: ${browser}\nHeadless: ${headless}\n\n${existingContent}`
   }
 
   const handleExecute = async () => {
@@ -138,6 +139,17 @@ export default function ExecutionPage() {
                 <select style={s.select} value={browser} onChange={e => setBrowser(e.target.value)}>
                   {BROWSERS.map(b => <option key={b} value={b}>{b}</option>)}
                 </select>
+              </div>
+              <div style={{ ...s.configField, justifyContent: 'flex-end' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', paddingTop: '20px' }}>
+                  <input
+                    type="checkbox"
+                    checked={!headless}
+                    onChange={e => setHeadless(!e.target.checked)}
+                    style={{ width: '15px', height: '15px', accentColor: '#dc2626', cursor: 'pointer' }}
+                  />
+                  <span style={{ fontSize: '0.82rem', fontWeight: 500, color: '#374151' }}>Headed Mode</span>
+                </label>
               </div>
             </div>
 
@@ -233,7 +245,13 @@ export default function ExecutionPage() {
                 </button>
               </div>
             </div>
-            <pre style={s.resultText}>{result}</pre>
+            <div style={s.resultText}>
+              {result.split(/(data:image\/png;base64,[^\s]+)/).map((part, i) =>
+                part.startsWith('data:image/png;base64,')
+                  ? <img key={i} src={part} alt="Execution screenshot" style={{ maxWidth: '100%', borderRadius: '8px', margin: '8px 0', border: '1px solid #e5e7eb' }} />
+                  : <span key={i}>{part}</span>
+              )}
+            </div>
             <div style={s.resultFoot}>
               💡 In the print dialog, choose <strong>Save as PDF</strong> to download.
             </div>

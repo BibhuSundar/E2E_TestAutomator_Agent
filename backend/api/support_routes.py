@@ -57,12 +57,12 @@ async def chat(request: ChatRequest):
 
 
 async def _generate_answer(question: str, context: str) -> str:
+    if settings.groq_api_key:
+        return await _groq_answer(question, context)
+
     answer = await _ollama_answer(question, context)
     if answer:
         return answer
-
-    if settings.groq_api_key:
-        return await _groq_answer(question, context)
 
     return _basic_answer(question, context)
 

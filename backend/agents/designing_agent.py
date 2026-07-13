@@ -1,5 +1,8 @@
 from agents.base_agent import BaseTestAgent
 
+#skill = Path(
+    #"backend/skills/automation_script_generation.md"
+#).read_text()
 
 class DesigningAgent(BaseTestAgent):
     role = "Test Design Architect"
@@ -18,4 +21,6 @@ class DesigningAgent(BaseTestAgent):
         "Cover all acceptance criteria. Include positive, negative, boundary value, validation, "
         "security, and error handling scenarios. Avoid duplicates. Maintain traceability. "
         "Use clear, concise, executable language. Output in Markdown table format."
+
     )
+    

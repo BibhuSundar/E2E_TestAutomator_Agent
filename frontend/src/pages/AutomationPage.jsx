@@ -10,6 +10,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
   import.meta.url
 ).toString()
 
+const LANGUAGES = ['Python', 'JavaScript', 'TypeScript', 'Java', 'C#', 'Ruby', 'Go']
 const FRAMEWORKS = ['Playwright', 'Selenium', 'Cypress', 'pytest', 'JUnit']
 const TABS = [
   { id: 'paste',    label: 'Paste Test Cases' },
@@ -76,7 +77,8 @@ h1{font-size:18px;color:#7c3aed;border-bottom:2px solid #a855f7;padding-bottom:6
 
 export default function AutomationPage() {
   const { hasPermission } = useAuth()
-  const [framework, setFramework]       = useState('Playwright')
+  const [language, setLanguage]       = useState('Python')
+  const [framework, setFramework]     = useState('Playwright')
   const [targetUrl, setTargetUrl]       = useState('')
   const [usePOM, setUsePOM]             = useState(true)
   const [activeTab, setActiveTab]       = useState('paste')
@@ -183,7 +185,7 @@ export default function AutomationPage() {
   const buildTask = () => {
     const urlNote = targetUrl.trim() ? `Target URL: ${targetUrl.trim()}\n` : ''
     const pomNote = usePOM ? 'Use Page Object Model (POM) pattern.\n' : ''
-    const header  = `Framework: ${framework}\n${urlNote}${pomNote}\n`
+    const header  = `Language: ${language}\nFramework: ${framework}\n${urlNote}${pomNote}\n`
     if (activeTab === 'paste')    return header + pasteText.trim()
     if (activeTab === 'upload')   return header + fileEditable.trim()
     if (activeTab === 'jira')     return header + (jiraKey.trim() ? `Jira Issue: ${jiraKey.trim()}\n\n` : '') + jiraText.trim()
@@ -237,8 +239,14 @@ export default function AutomationPage() {
         <div style={s.card}>
           <div style={s.cardBody}>
 
-            {/* Row 1: Framework + Target URL */}
+            {/* Row 1: Language + Framework + Target URL */}
             <div style={s.configRow}>
+              <div style={s.configField}>
+                <label style={s.configLabel}>Language</label>
+                <select style={s.select} value={language} onChange={e => setLanguage(e.target.value)}>
+                  {LANGUAGES.map(l => <option key={l} value={l}>{l}</option>)}
+                </select>
+              </div>
               <div style={s.configField}>
                 <label style={s.configLabel}>Framework</label>
                 <select style={s.select} value={framework} onChange={e => setFramework(e.target.value)}>
@@ -500,6 +508,7 @@ export default function AutomationPage() {
                 <span style={{ ...s.resultTitle, color: approved ? '#166534' : rejected ? '#dc2626' : '#4c1d95' }}>
                   {approved ? 'Automation Script — Approved' : rejected ? 'Automation Script — Rejected' : 'Automation Script Generated'}
                 </span>
+                <span style={s.frameworkBadge}>{language}</span>
                 <span style={s.frameworkBadge}>{framework}</span>
                 {usePOM && <span style={s.pomBadge}>POM</span>}
                 {approved && <span style={s.approvedBadge}>✅ Approved · {approvedAt}</span>}

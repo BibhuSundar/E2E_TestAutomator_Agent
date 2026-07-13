@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     groq_model: str = "llama-3.3-70b-versatile"
 
     # Default LLM provider: "openai" | "ollama" | "groq"
-    default_llm_provider: str = "openai"
+    default_llm_provider: str = "groq"
 
     # Jira
     jira_base_url: Optional[str] = None

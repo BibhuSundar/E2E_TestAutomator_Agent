@@ -3,7 +3,7 @@ from tools.playwright_tool import execute_playwright_script
 
 
 class ExecutionAgent(BaseTestAgent):
-    default_llm_provider = "ollama"
+    default_llm_provider = "groq"
     tools = [execute_playwright_script]
     role = "Test Execution Specialist"
     goal = (

@@ -2,7 +2,7 @@ from agents.base_agent import BaseTestAgent
 
 
 class ProductRequirementAgent(BaseTestAgent):
-    default_llm_provider = "ollama"
+    default_llm_provider = "groq"
     role = "Product Requirement Analyst"
     goal = (
         "Analyze product requirements, user stories, and business specifications to extract "

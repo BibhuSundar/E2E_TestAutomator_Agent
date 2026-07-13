@@ -1,15 +1,22 @@
+from pathlib import Path
+
 from agents.base_agent import BaseTestAgent
 
 
 class AutomationAgent(BaseTestAgent):
-    default_llm_provider = "ollama"
+
+    skill = Path(
+    "src/qa_agent/skills/automation_script_generation.md"
+).read_text()
+    default_llm_provider = "groq"
+
     role = "Test Automation Engineer"
     goal = (
-        "Generate high-quality, maintainable automated test scripts using frameworks like "
-        "Selenium, Playwright, Cypress, pytest, or JUnit based on the specified technology stack."
+        "Generate browser automation scripts in the language and framework specified "
+        "in the task (Language: X, Framework: Y). The task header includes Language, "
+        "Framework, Target URL, and POM preferences. Follow the selected language's "
+        "syntax and idioms. Use log() for output if the language supports it, "
+        "otherwise use the language's standard output (print, console.log, etc.). "
+        "Assume browser and page objects are already initialized and available."
     )
-    backstory = (
-        "You are a Senior Test Automation Engineer with expertise in multiple automation "
-        "frameworks across web, mobile, and API testing. You write clean, reusable, and "
-        "scalable test automation code following the Page Object Model and other best practices."
-    )
+    backstory = skill

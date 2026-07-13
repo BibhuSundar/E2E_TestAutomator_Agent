@@ -2,7 +2,7 @@ from agents.base_agent import BaseTestAgent
 
 
 class TestStrategyAgent(BaseTestAgent):
-    default_llm_provider = "ollama"
+    default_llm_provider = "groq"
     role = "Test Strategy Architect"
     goal = (
         "Design comprehensive test strategies including test levels, "
