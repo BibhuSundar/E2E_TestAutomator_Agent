@@ -71,13 +71,17 @@ def _write_env(updates: dict[str, str]) -> None:
 @router.get("/jira")
 async def get_jira_config(current_user: UserOut = Depends(get_current_user)):
     env = _read_env()
-    token = env.get("JIRA_API_TOKEN", "")
+    # Fall back to Pydantic settings (actual env vars from Railway dashboard)
+    jira_base_url = env.get("JIRA_BASE_URL") or settings.jira_base_url or ""
+    jira_email = env.get("JIRA_EMAIL") or settings.jira_email or ""
+    token = env.get("JIRA_API_TOKEN") or settings.jira_api_token or ""
+    jira_project_key = env.get("JIRA_PROJECT_KEY") or settings.jira_project_key or ""
     return {
-        "jira_base_url": env.get("JIRA_BASE_URL", ""),
-        "jira_email": env.get("JIRA_EMAIL", ""),
+        "jira_base_url": jira_base_url,
+        "jira_email": jira_email,
         "jira_api_token": _mask(token) if token else "",
         "has_token": bool(token),
-        "jira_project_key": env.get("JIRA_PROJECT_KEY", ""),
+        "jira_project_key": jira_project_key,
     }
 
 
